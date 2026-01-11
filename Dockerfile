@@ -11,9 +11,6 @@ WORKDIR /app
 # 复制构建产物
 COPY --from=builder /app/build/libs/*.jar app.jar
 
-# 复制字体文件（如果有的话）
-COPY --from=builder /app/src/main/resources/fonts /app/fonts 2>/dev/null || true
-
 # 设置时区为上海
 ENV TZ=Asia/Shanghai
 
