@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<!--
+  摄影参数海报预览页面
+  
+  功能：
+  - 实时预览海报效果（CSS 模拟）
+  - 切换不同模板样式
+  - 下载高质量海报（服务端渲染）
+-->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海报预览</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background: #f0f0f0;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+        }
+
+        /* 预览区域 */
+        .preview-section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .preview-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+        }
+
+        .preview-title span {
+            font-weight: 400;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .preview-container {
+            background: #e5e5e5;
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* ========================================
+           经典白底模板预览样式
+           ======================================== */
+        .poster-preview {
+            background: white;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            max-width: 100%;
+            text-align: center;
+        }
+
+        .poster-preview .photo-container {
+            margin-bottom: 20px;
+        }
+
+        .poster-preview .photo-container img {
+            max-width: 100%;
+            max-height: 55vh;
+            display: block;
+        }
+
+        .poster-preview .camera-model {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .poster-preview .lens-model {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 16px;
+        }
+
+        .poster-preview .separator {
+            width: 60%;
+            height: 1px;
+            background: #e0e0e0;
+            margin: 0 auto 16px;
+        }
+
+        .poster-preview .params-line {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            letter-spacing: 0.02em;
+        }
+
+        /* ========================================
+           毛玻璃背景模板预览样式
+           照片周围显示模糊背景边框
+           ======================================== */
+        .poster-preview.blur-bg {
+            position: relative;
+            padding: 0;
+            background: #555;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        /* 模糊背景层 - 使用 CSS 变量设置背景图 */
+        .poster-preview.blur-bg::before {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            /* 扩展到外部，避免模糊边缘问题 */
+            background-image: var(--bg-image);
+            background-size: cover;
+            background-position: center;
+            filter: blur(25px) brightness(0.8) saturate(1.2);
+            z-index: 0;
+        }
+
+        /* 照片容器 - 增加边距形成明显的边框效果 */
+        .poster-preview.blur-bg .photo-container {
+            position: relative;
+            z-index: 1;
+            padding: 20px;
+            padding-bottom: 10px;
+        }
+
+        .poster-preview.blur-bg .photo-container img {
+            border-radius: 6px;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.5);
+            display: block;
+        }
+
+        /* 文字区域 */
+        .poster-preview.blur-bg .info-section {
+            position: relative;
+            z-index: 1;
+            padding: 10px 20px 24px;
+            text-align: center;
+        }
+
+        .poster-preview.blur-bg .camera-model {
+            color: #1a1a1a;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+        .poster-preview.blur-bg .params-line {
+            color: #444;
+            font-size: 0.85rem;
+            margin-top: 6px;
+        }
+
+        .poster-preview.blur-bg .separator {
+            display: none;
+        }
+
+        .poster-preview.blur-bg .lens-model {
+            display: none;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .panel-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* 模板选择 */
+        .template-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .template-item {
+            padding: 12px 16px;
+            border: 2px solid #e5e5e5;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .template-item:hover {
+            border-color: #667eea;
+            background: #f8f7ff;
+        }
+
+        .template-item.active {
+            border-color: #667eea;
+            background: #ede9fe;
+        }
+
+        .template-name {
+            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 0.95rem;
+        }
+
+        .template-desc {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* EXIF 信息显示 */
+        .exif-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .exif-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+        }
+
+        .exif-label {
+            color: #888;
+        }
+
+        .exif-value {
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
+        /* 操作按钮 */
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #666;
+            border: 1px solid #ddd;
+            text-decoration: none;
+        }
+
+        .btn-secondary:hover {
+            background: #fafafa;
+            border-color: #ccc;
+        }
+
+        .btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* 加载状态 */
+        .loading {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .loading.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e5e5e5;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 响应式 */
+        @media (max-width: 900px) {
+            .page-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 加载遮罩 -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>正在生成高清海报...</p>
+    </div>
+
+    <div class="page-container">
+        <!-- 预览区域 -->
+        <div class="preview-section">
+            <h2 class="preview-title">海报预览 <span>（仅供参考）</span></h2>
+            <div class="preview-container">
+                <!-- 海报预览（CSS 模拟效果） -->
+                <!-- 根据 currentTemplateId 初始化正确的样式类 -->
+                <div class="poster-preview" id="posterPreview"
+                    th:classappend="${currentTemplateId == 'blur-background'} ? 'blur-bg' : ''">
+                    <div class="photo-container">
+                        <img th:src="${exif.imageBase64}" id="previewImage" alt="预览">
+                    </div>
+                    <div class="info-section">
+                        <div class="camera-model" id="displayCamera" th:text="${exif.cameraModel}">NIKON Z 8</div>
+                        <div class="lens-model" id="displayLens" th:text="${exif.lensModel}">NIKKOR Z 24-70mm</div>
+                        <div class="separator"></div>
+                        <div class="params-line" id="displayParams">
+                            <span th:text="${exif.focalLength}">50mm</span> ·
+                            <span th:text="${exif.aperture}">f/2.8</span> ·
+                            <span th:text="${exif.shutterSpeed}">1/250s</span> ·
+                            ISO <span th:text="${exif.iso}">100</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <!-- 模板选择 -->
+            <div class="panel">
+                <h3 class="panel-title">选择模板</h3>
+                <div class="template-list">
+                    <div th:each="template : ${templates}" class="template-item"
+                        th:classappend="${template.templateId == currentTemplateId} ? 'active' : ''"
+                        th:data-id="${template.templateId}" onclick="selectTemplate(this)">
+                        <div class="template-name" th:text="${template.templateName}">经典白底</div>
+                        <div class="template-desc" th:text="${template.description}">简洁大气</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EXIF 信息 -->
+            <div class="panel">
+                <h3 class="panel-title">拍摄参数</h3>
+                <div class="exif-list">
+                    <div class="exif-item">
+                        <span class="exif-label">相机</span>
+                        <span class="exif-value" id="exifCamera" th:text="${exif.cameraModel}">NIKON Z 8</span>
+                    </div>
+                    <div class="exif-item">
+                        <span class="exif-label">镜头</span>
+                        <span class="exif-value" id="exifLens" th:text="${exif.lensModel}">24-70mm</span>
+                    </div>
+                </div>
+                <div class="params-preview"
+                    style="margin-top: 12px; padding: 12px; background: #f5f5f5; border-radius: 8px; text-align: center; font-size: 0.9rem; color: #333;">
+                    <span id="exifFocal" th:text="${exif.focalLength}">50mm</span> ·
+                    <span id="exifAperture" th:text="${exif.aperture}">f/2.8</span> ·
+                    <span id="exifShutter" th:text="${exif.shutterSpeed}">1/250s</span> ·
+                    ISO <span id="exifIso" th:text="${exif.iso}">100</span>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="panel">
+                <h3 class="panel-title">导出格式</h3>
+                <div class="format-options" style="display: flex; gap: 8px; margin-bottom: 16px;">
+                    <label class="format-option" style="flex: 1; text-align: center;">
+                        <input type="radio" name="format" value="jpg" id="formatJpg" checked style="display: none;">
+                        <span class="format-label"
+                            style="display: block; padding: 10px; border: 2px solid #e5e5e5; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">
+                            <strong>JPG</strong><br><span style="color: #888; font-size: 0.75rem;">文件更小</span>
+                        </span>
+                    </label>
+                    <label class="format-option" style="flex: 1; text-align: center;">
+                        <input type="radio" name="format" value="png" id="formatPng" style="display: none;">
+                        <span class="format-label"
+                            style="display: block; padding: 10px; border: 2px solid #e5e5e5; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">
+                            <strong>PNG</strong><br><span style="color: #888; font-size: 0.75rem;">无损画质</span>
+                        </span>
+                    </label>
+                </div>
+                <style>
+                    .format-option input:checked+.format-label {
+                        border-color: #667eea;
+                        background: #ede9fe;
+                    }
+                </style>
+                <button class="btn btn-primary" id="downloadBtn" onclick="downloadPoster()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    下载海报
+                </button>
+                <a href="/" class="btn btn-secondary" style="margin-top: 12px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    重新上传
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏域存储数据 -->
+    <input type="hidden" id="imageBase64" th:value="${exif.imageBase64}">
+
+    <script>
+        // 当前选中的模板 ID
+        let currentTemplateId = '[[${currentTemplateId}]]';
+        const posterPreview = document.getElementById('posterPreview');
+        const previewImage = document.getElementById('previewImage');
+
+        // 初始化毛玻璃背景
+        function initBlurBackground() {
+            posterPreview.style.setProperty('--bg-image', `url('${previewImage.src}')`);
+        }
+
+        // 页面加载后初始化
+        window.addEventListener('load', initBlurBackground);
+
+        // 选择模板
+        function selectTemplate(element) {
+            // 移除其他项的 active 状态
+            document.querySelectorAll('.template-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            // 添加当前项的 active 状态
+            element.classList.add('active');
+            currentTemplateId = element.dataset.id;
+
+            // 切换预览样式
+            if (currentTemplateId === 'blur-background') {
+                posterPreview.classList.add('blur-bg');
+            } else {
+                posterPreview.classList.remove('blur-bg');
+            }
+        }
+
+        // 下载海报
+        async function downloadPoster() {
+            const loading = document.getElementById('loading');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            loading.classList.add('show');
+            downloadBtn.disabled = true;
+
+            try {
+                // 获取选中的格式
+                const format = document.querySelector('input[name="format"]:checked').value;
+
+                // 构建表单数据
+                const formData = new FormData();
+                formData.append('template', currentTemplateId);
+                formData.append('format', format);
+                formData.append('imageBase64', document.getElementById('imageBase64').value);
+                formData.append('cameraModel', document.getElementById('exifCamera').textContent);
+                formData.append('lensModel', document.getElementById('exifLens').textContent);
+                formData.append('focalLength', document.getElementById('exifFocal').textContent);
+                formData.append('aperture', document.getElementById('exifAperture').textContent);
+                formData.append('shutterSpeed', document.getElementById('exifShutter').textContent);
+                formData.append('iso', document.getElementById('exifIso').textContent);
+
+                // 请求服务端渲染
+                const response = await fetch('/api/image/download', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('下载失败');
+                }
+
+                // 获取文件名
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'poster.png';
+                if (contentDisposition) {
+                    const match = contentDisposition.match(/filename="(.+)"/);
+                    if (match) filename = match[1];
+                }
+
+                // 下载文件
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+            } catch (error) {
+                console.error('下载失败:', error);
+                alert('下载失败，请重试');
+            } finally {
+                loading.classList.remove('show');
+                downloadBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>

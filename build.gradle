@@ -1,0 +1,51 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.0.1'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'yuan'
+version = '0.0.1-SNAPSHOT'
+description = 'Demo project for Spring Boot'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	compileOnly 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-thymeleaf-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	
+	// EXIF 元数据提取
+	implementation 'com.drewnoakes:metadata-extractor:2.19.0'
+	
+	// JH Labs Image Filters - 专业级图像滤镜库（高质量高斯模糊）
+	implementation 'com.jhlabs:filters:2.0.235-1'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+// 为 bootRun 分配更多内存，处理 Z8 等高像素相机大图
+tasks.named('bootRun') {
+	jvmArgs = ['-Xmx4g']
+}

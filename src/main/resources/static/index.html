@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>摄影参数海报生成器</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 560px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            text-align: center;
+        }
+
+        .logo {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .logo svg {
+            width: 36px;
+            height: 36px;
+            fill: white;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+
+        .mode-tabs {
+            display: flex;
+            background: #f3f4f6;
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 24px;
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #6b7280;
+            transition: all 0.2s;
+        }
+
+        .mode-tab.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .file-zone {
+            border: 2px dashed #d1d5db;
+            border-radius: 16px;
+            padding: 40px 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafafa;
+            position: relative;
+        }
+
+        .file-zone:hover {
+            border-color: #667eea;
+            background: #f5f3ff;
+        }
+
+        .file-zone.dragover {
+            border-color: #667eea;
+            background: #ede9fe;
+        }
+
+        .file-zone input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-zone svg {
+            width: 48px;
+            height: 48px;
+            color: #9ca3af;
+            margin-bottom: 12px;
+        }
+
+        .file-zone:hover svg {
+            color: #667eea;
+        }
+
+        .file-zone p {
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+
+        .file-zone p strong {
+            color: #667eea;
+        }
+
+        .file-zone .hint {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            margin-top: 8px;
+        }
+
+        .file-list {
+            margin-top: 12px;
+            text-align: left;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            padding: 8px 12px;
+            background: #ede9fe;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #5b21b6;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-item .size {
+            color: #888;
+            font-size: 0.75rem;
+        }
+
+        .template-section {
+            text-align: left;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+
+        .template-section>label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 10px;
+        }
+
+        .template-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .template-option {
+            flex: 1;
+            position: relative;
+        }
+
+        .template-option input {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .template-option label {
+            display: block;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .template-option input:checked+label {
+            border-color: #667eea;
+            background: #ede9fe;
+        }
+
+        .template-option label:hover {
+            border-color: #667eea;
+        }
+
+        .template-option .name {
+            font-weight: 600;
+            color: #1a1a2e;
+            font-size: 0.9rem;
+        }
+
+        .template-option .desc {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .format-section {
+            display: flex;
+            gap: 10px;
+        }
+
+        .format-option {
+            flex: 1;
+        }
+
+        .format-option input {
+            display: none;
+        }
+
+        .format-option label {
+            display: block;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .format-option input:checked+label {
+            border-color: #667eea;
+            background: #ede9fe;
+        }
+
+        .submit-btn {
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar.show {
+            display: block;
+        }
+
+        .progress-bar .fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .feature svg {
+            width: 16px;
+            height: 16px;
+            color: #10b981;
+        }
+
+        #batchForm {
+            display: none;
+        }
+
+        #batchForm.active {
+            display: flex;
+        }
+
+        #singleForm.active {
+            display: flex;
+        }
+
+        #singleForm {
+            display: none;
+        }
+
+        @media (max-width: 540px) {
+            .container {
+                padding: 32px 24px;
+            }
+
+            .template-options,
+            .format-section {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="logo">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z" />
+                <path
+                    d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" />
+            </svg>
+        </div>
+
+        <h1>摄影参数海报生成器</h1>
+        <p class="subtitle">上传照片，自动提取 EXIF 数据<br>生成精美的摄影参数海报</p>
+
+        <!-- 模式切换 -->
+        <div class="mode-tabs">
+            <button class="mode-tab active" onclick="switchMode('single')">单张处理</button>
+            <button class="mode-tab" onclick="switchMode('batch')">批量处理</button>
+        </div>
+
+        <!-- 单张处理表单 -->
+        <form class="upload-form active" id="singleForm" action="/api/image/upload" method="post"
+            enctype="multipart/form-data">
+            <div class="file-zone" id="singleFileZone">
+                <input type="file" name="image" id="singleFileInput" accept="image/jpeg,image/jpg,image/png" required>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1M12 4v12m0 0l-4-4m4 4l4-4" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                <p><strong>点击选择</strong> 或拖拽图片</p>
+                <p class="hint">支持 JPEG / PNG，最大 200MB</p>
+                <div class="file-list" id="singleFileList"></div>
+            </div>
+
+            <div class="template-section">
+                <label>选择模板样式</label>
+                <div class="template-options">
+                    <div class="template-option">
+                        <input type="radio" name="template" value="classic" id="tplClassic" checked>
+                        <label for="tplClassic">
+                            <div class="name">经典白底</div>
+                            <div class="desc">简洁大气</div>
+                        </label>
+                    </div>
+                    <div class="template-option">
+                        <input type="radio" name="template" value="blur-background" id="tplBlur">
+                        <label for="tplBlur">
+                            <div class="name">毛玻璃背景</div>
+                            <div class="desc">现代风格</div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">生成海报</button>
+        </form>
+
+        <!-- 批量处理表单 -->
+        <form class="upload-form" id="batchForm" onsubmit="submitBatch(event)">
+            <div class="file-zone" id="batchFileZone">
+                <input type="file" name="images" id="batchFileInput" accept="image/jpeg,image/jpg,image/png" multiple
+                    required>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1M12 4v12m0 0l-4-4m4 4l4-4" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                <p><strong>点击选择多张图片</strong> 或拖拽</p>
+                <p class="hint">支持 JPEG / PNG，可选择多张</p>
+                <div class="file-list" id="batchFileList"></div>
+            </div>
+
+            <div class="template-section">
+                <label>选择模板样式</label>
+                <div class="template-options">
+                    <div class="template-option">
+                        <input type="radio" name="batchTemplate" value="classic" id="batchTplClassic" checked>
+                        <label for="batchTplClassic">
+                            <div class="name">经典白底</div>
+                            <div class="desc">简洁大气</div>
+                        </label>
+                    </div>
+                    <div class="template-option">
+                        <input type="radio" name="batchTemplate" value="blur-background" id="batchTplBlur">
+                        <label for="batchTplBlur">
+                            <div class="name">毛玻璃背景</div>
+                            <div class="desc">现代风格</div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="template-section">
+                <label>导出格式</label>
+                <div class="format-section">
+                    <div class="format-option">
+                        <input type="radio" name="batchFormat" value="jpg" id="batchFormatJpg" checked>
+                        <label for="batchFormatJpg"><strong>JPG</strong> 文件更小</label>
+                    </div>
+                    <div class="format-option">
+                        <input type="radio" name="batchFormat" value="png" id="batchFormatPng">
+                        <label for="batchFormatPng"><strong>PNG</strong> 无损画质</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-bar" id="progressBar">
+                <div class="fill" id="progressFill"></div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="batchSubmitBtn">批量生成并下载 ZIP</button>
+        </form>
+
+        <div class="features">
+            <span class="feature">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                自动识别 EXIF
+            </span>
+            <span class="feature">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                高清无损导出
+            </span>
+        </div>
+    </div>
+
+    <script>
+        // 模式切换
+        function switchMode(mode) {
+            document.querySelectorAll('.mode-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (mode === 'single') {
+                document.getElementById('singleForm').classList.add('active');
+                document.getElementById('batchForm').classList.remove('active');
+            } else {
+                document.getElementById('singleForm').classList.remove('active');
+                document.getElementById('batchForm').classList.add('active');
+            }
+        }
+
+        // 单文件选择
+        const singleFileInput = document.getElementById('singleFileInput');
+        const singleFileList = document.getElementById('singleFileList');
+
+        singleFileInput.addEventListener('change', function () {
+            singleFileList.innerHTML = '';
+            if (this.files[0]) {
+                const file = this.files[0];
+                singleFileList.innerHTML = `<div class="file-item">
+                    <span>${file.name}</span>
+                    <span class="size">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                </div>`;
+            }
+        });
+
+        // 批量文件选择
+        const batchFileInput = document.getElementById('batchFileInput');
+        const batchFileList = document.getElementById('batchFileList');
+
+        batchFileInput.addEventListener('change', function () {
+            batchFileList.innerHTML = '';
+            for (const file of this.files) {
+                batchFileList.innerHTML += `<div class="file-item">
+                    <span>${file.name}</span>
+                    <span class="size">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                </div>`;
+            }
+        });
+
+        // 批量提交
+        async function submitBatch(e) {
+            e.preventDefault();
+
+            const files = batchFileInput.files;
+            if (files.length === 0) {
+                alert('请选择图片文件');
+                return;
+            }
+
+            const template = document.querySelector('input[name="batchTemplate"]:checked').value;
+            const format = document.querySelector('input[name="batchFormat"]:checked').value;
+
+            const formData = new FormData();
+            for (const file of files) {
+                formData.append('images', file);
+            }
+            formData.append('template', template);
+            formData.append('format', format);
+
+            const btn = document.getElementById('batchSubmitBtn');
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+
+            btn.disabled = true;
+            btn.textContent = '正在处理...';
+            progressBar.classList.add('show');
+            progressFill.style.width = '10%';
+
+            try {
+                const response = await fetch('/api/image/batch', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                progressFill.style.width = '90%';
+
+                if (!response.ok) {
+                    throw new Error('处理失败');
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'posters.zip';
+                if (contentDisposition) {
+                    const match = contentDisposition.match(/filename="(.+)"/);
+                    if (match) filename = match[1];
+                }
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                progressFill.style.width = '100%';
+                btn.textContent = '下载完成！';
+
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = '批量生成并下载 ZIP';
+                    progressBar.classList.remove('show');
+                    progressFill.style.width = '0%';
+                }, 2000);
+
+            } catch (error) {
+                console.error('批量处理失败:', error);
+                alert('批量处理失败，请重试');
+                btn.disabled = false;
+                btn.textContent = '批量生成并下载 ZIP';
+                progressBar.classList.remove('show');
+            }
+        }
+
+        // 拖拽支持
+        ['singleFileZone', 'batchFileZone'].forEach(id => {
+            const zone = document.getElementById(id);
+            zone.addEventListener('dragover', e => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+            zone.addEventListener('dragleave', e => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+            });
+            zone.addEventListener('drop', e => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                const input = zone.querySelector('input[type="file"]');
+                input.files = e.dataTransfer.files;
+                input.dispatchEvent(new Event('change'));
+            });
+        });
+    </script>
+</body>
+
+</html>
