@@ -1,5 +1,5 @@
-# 构建阶段：使用 Gradle 构建 JAR
-FROM gradle:8.5-jdk21 AS builder
+# 构建阶段：使用 Gradle 8.14+ 构建 JAR（Spring Boot 4.0.1 需要）
+FROM gradle:8.14-jdk21 AS builder
 WORKDIR /app
 COPY . .
 RUN gradle build -x test --no-daemon
