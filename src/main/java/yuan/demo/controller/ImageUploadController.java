@@ -1,4 +1,4 @@
-﻿package yuan.demo.controller;
+ackage yuan.demo.controller;
 
 import com.drew.imaging.ImageProcessingException;
 import lombok.RequiredArgsConstructor;
