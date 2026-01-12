@@ -18,4 +18,4 @@ ENV TZ=Asia/Shanghai
 EXPOSE 8081
 
 # 启动命令
-ENTRYPOINT ["java", "-Xmx512m", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx400m", "-XX:+UseSerialGC", "-XX:MaxRAM=512m", "-jar", "app.jar"]

@@ -1,4 +1,4 @@
-package yuan.demo.controller;
+﻿package yuan.demo.controller;
 
 import com.drew.imaging.ImageProcessingException;
 import lombok.RequiredArgsConstructor;
@@ -129,12 +129,8 @@ public class ImageUploadController {
                                         // 提取 EXIF 信息
                                         ExifInfo exifInfo = exifExtractorService.extractExifInfo(file);
 
-                                        // 加载图片（包含 EXIF 方向校正）
+                                        // 加载图片（只加载一次，loadImageFromBase64 已包含 EXIF 方向校正）
                                         BufferedImage originalImage = posterRenderService
-                                                        .loadImage(file.getInputStream());
-
-                                        // 检查是否需要旋转（根据 EXIF Orientation）
-                                        originalImage = posterRenderService
                                                         .loadImageFromBase64(exifInfo.getImageBase64());
 
                                         // 渲染海报

@@ -103,10 +103,12 @@ public class BlurBackgroundTemplate extends AbstractPosterTemplate {
         BufferedImage shadow = createSoftDropShadow(photoWidth, photoHeight, cornerRadius, shadowExpand,
                 shadowBlurRadius);
         g2d.drawImage(shadow, photoX - shadowExpand, photoY - shadowExpand + shadowOffset, null);
+        shadow.flush(); // 立即释放内存
 
         // ========== 第四层：圆角照片 ==========
         BufferedImage roundedPhoto = createRoundedPhoto(originalImage, cornerRadius);
         g2d.drawImage(roundedPhoto, photoX, photoY, null);
+        roundedPhoto.flush(); // 立即释放内存
 
         // ========== 第五层：文字 ==========
         drawTextLayer(g2d, exifInfo, canvas, canvasWidth, canvasHeight,
@@ -155,6 +157,10 @@ public class BlurBackgroundTemplate extends AbstractPosterTemplate {
         // 放大绘制到画布
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g2d.drawImage(blurred, 0, 0, targetWidth, targetHeight, null);
+
+        // 释放临时缓冲区
+        small.flush();
+        blurred.flush();
 
         // 暗色遮罩
         g2d.setColor(new Color(0, 0, 0, 50));

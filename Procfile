@@ -1,1 +1,1 @@
-web: java -Xmx512m -jar build/libs/*.jar
+web: java -Xmx400m -XX:+UseSerialGC -jar build/libs/*.jar
